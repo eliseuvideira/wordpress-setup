@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: $WORDPRESS_DB_ROOT_PASSWORD
+      MYSQL_DATABASE: $WORDPRESS_DB_NAME
+      MYSQL_USER: $WORDPRESS_DB_USER
+      MYSQL_PASSWORD: $WORDPRESS_DB_PASSWORD
+
+  wordpress:
+    hostname: $DOMAIN_NAME
+    depends_on:
+      - db
+    image: wordpress:latest
+    volumes:
+      - wordpress_data:/var/www/html
+    ports:
+      - $PORT:80
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: $WORDPRESS_DB_USER
+      WORDPRESS_DB_PASSWORD: $WORDPRESS_DB_PASSWORD
+      WORDPRESS_DB_NAME: $WORDPRESS_DB_NAME
+      WORDPRESS_CONFIG_EXTRA: >
+        define('WP_SITE_URL', 'https://$DOMAIN_NAME/');
+        define('WP_HOME', 'https://$DOMAIN_NAME/');
+        define('FORCE_SSL_ADMIN', true);
+        if (strpos($${'_SERVER'}['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
+          $${'_SERVER'}['HTTPS'] = 'on';
+        }
+
+volumes:
+  db_data: {}
+  wordpress_data: {}
